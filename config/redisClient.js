@@ -1,5 +1,17 @@
-const redis = require("redis");
-const redisClient = redis.createClient();
+const Redis = require('redis');
 
-redisClient.on("error", (err) => console.error("Redis Error:", err));
-redisClient.connect();
+// Read Redis configuration from .env file
+const redis = new Redis({
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+});
+
+redis.on('connect', () => {
+    console.log('Connected to Redis');
+});
+
+redis.on('error', (err) => {
+    console.error('Redis error:', err);
+});
+
+module.exports = redis;

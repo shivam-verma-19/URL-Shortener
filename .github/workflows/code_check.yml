@@ -1,18 +1,63 @@
-# This is a workflow to check the security issue in Node.js code
+name: JavaScript Code Quality Checks
 
-name: "Node.js Vulnerabilities"
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - "**/*.js"
+    branches:
+      - main
+      - "feature/*" # Include feature branches if needed
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  is-my-node-vulnerable:
+  security:
+    name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Check Node.js
-        uses: nodejs/is-my-node-vulnerable@v1.6.1
-        with:
-          node-version: "22.13.1"
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run security audit
+        run: npm audit --production --json | tee audit-report.json
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run ESLint
+        run: npm run lint
+
+  outdated-dependencies:
+    name: Check for outdated dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check for outdated packages
+        run: npm outdated --json | tee outdated-report.json
+
+  prettier:
+  name: Check Formatting
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run Prettier
+      run: npm run prettier

@@ -1,7 +1,5 @@
 # URL Shortener
 
-The project described in the README is a URL Shortener service built with Node.js. Here is a detailed explanation:
-
 ## Project Overview
 
 The URL Shortener service allows users to shorten long URLs, making them easier to share and manage. It also provides functionality to redirect shortened URLs to their original destinations and track the number of times a shortened URL has been accessed.
@@ -40,10 +38,6 @@ The URL Shortener service allows users to shorten long URLs, making them easier 
 - POST /api/shorten: Endpoint to shorten a long URL.
 - GET /:shortUrl: Endpoint to redirect to the original URL using the shortened URL.
 - GET /api/stats/:shortUrl: Endpoint to get statistics for a shortened URL, such as the number of times it has been accessed.
-
-## Contributing
-
-Contributions to the project are welcome. Users can open an issue or submit a pull request to contribute.
 
 ## License
 

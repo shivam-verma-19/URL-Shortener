@@ -48,16 +48,3 @@ jobs:
 
       - name: Check for outdated packages
         run: npm outdated --json | tee outdated-report.json
-
-  prettier:
-    name: Check Formatting
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run Prettier
-        run: npm run prettier

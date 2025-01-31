@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authenticateUser = require("../middlewares/authenticateUser");
 const rateLimitMiddleware = require("../middlewares/rateLimit");
-const ShortUrl = require("../models/ShortUrl"); // Import the schema
+const ShortUrl = require("../models/shortUrl"); // Import the schema
 const { generateShortAlias } = require("../utils/generateShortAlias"); // Utility for generating aliases
 const redisClient = require("../config/redisClient"); // Redis for caching
 

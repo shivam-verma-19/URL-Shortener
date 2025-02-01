@@ -7,7 +7,7 @@ const googleClient = new OAuth2Client(googleClientId);
 const verifyToken = async (token) => {
     const ticket = await googleClient.verifyIdToken({
         idToken: token,
-        audience: googleClientId, // Same as the client ID in Google API credentials
+        audience: googleClientId,
     });
     const payload = ticket.getPayload();
     return payload;

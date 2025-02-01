@@ -1,10 +1,13 @@
 const { RateLimiterRedis } = require("rate-limiter-flexible");
-const redis = require("redis");
+const Redis = require("ioredis");
 
 // Configure Redis client
-const redisClient = redis.createClient();
+const redisClient = new Redis({
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT
+});
+
 redisClient.on("error", (err) => console.error("Redis Error:", err));
-redisClient.connect();
 
 // Configure rate limiter
 const rateLimiter = new RateLimiterRedis({

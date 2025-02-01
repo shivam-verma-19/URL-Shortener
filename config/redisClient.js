@@ -1,7 +1,7 @@
-const redis = require('redis');
+const redis = require('ioredis');
 
 const client = redis.createClient({
-    url: process.env.REDIS_HOST,  // Ensure your .env file contains the correct Redis URL
+    url: process.env.REDIS_HOST,
 });
 
 client.on('connect', () => {
@@ -12,6 +12,6 @@ client.on('error', (err) => {
     console.error('❌ Redis error:', err);
 });
 
-client.connect();  // Important: Connect to Redis before using it
+client.connect();
 
 module.exports = client;

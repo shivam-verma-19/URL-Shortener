@@ -19,7 +19,7 @@ const rateLimitMiddleware = async (req, res, next) => {
         const userId = req.user.id; // Assuming user is authenticated
         await rateLimiter.consume(userId);
         next();
-    } catch (err) {
+    } catch {
         res.status(429).json({ message: "Too many requests. Try again later." });
     }
 };

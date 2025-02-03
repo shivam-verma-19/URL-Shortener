@@ -1,16 +1,11 @@
-const redis = require('ioredis');
+const Redis = require("ioredis");
 
-const client = redis.createClient({
-    url: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
+const redis = new Redis({
+    host: "demo-db5usa.serverless.aps1.cache.amazonaws.com",
+    port: 6379,
+    tls: {}  // Enable TLS for AWS ElastiCache Redis
 });
 
-client.on('connect', () => {
-    console.log('✅ Connected to Redis');
-});
-
-client.on('error', (err) => {
-    console.error('❌ Redis error:', err);
-});
-
-module.exports = client;
+redis.ping()
+    .then(() => console.log("Connected to Redis"))
+    .catch(err => console.error("Redis connection failed", err));

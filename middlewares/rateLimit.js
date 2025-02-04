@@ -1,26 +1,26 @@
-const { RateLimiterRedis } = require("rate-limiter-flexible");
-const Redis = require("ioredis");
+const axios = require("axios");
 
-const redisClient = new Redis({
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-});
+const REDIS_PROXY_URL = "https://nehehy80pg.execute-api.ap-south-1.amazonaws.com/prod"; // Replace with your API Gateway URL
 
-// Configure rate limiter
-const rateLimiter = new RateLimiterRedis({
-    storeClient: redisClient,
-    points: 10, // 10 requests
-    duration: 3600, // Per hour
-});
-
-// Middleware for rate limiting
 const rateLimitMiddleware = async (req, res, next) => {
     try {
         const userId = req.user.id; // Assuming user is authenticated
-        await rateLimiter.consume(userId);
+
+        // Get the current request count from Redis
+        const response = await axios.post(REDIS_PROXY_URL, { key: `rateLimit:${userId}` });
+        let requestCount = response.data?.value ? parseInt(response.data.value) : 0;
+
+        if (requestCount >= 10) {
+            return res.status(429).json({ message: "Too many requests. Try again later." });
+        }
+
+        // Increment the request count and set expiry
+        await axios.post(REDIS_PROXY_URL, { key: `rateLimit:${userId}`, value: requestCount + 1 });
+
         next();
-    } catch {
-        res.status(429).json({ message: "Too many requests. Try again later." });
+    } catch (error) {
+        console.error("Rate limiter error:", error.message);
+        res.status(500).json({ message: "Internal server error." });
     }
 };
 

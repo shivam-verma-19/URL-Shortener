@@ -4,7 +4,7 @@ const authenticateUser = require("../middlewares/authenticateUser");
 const rateLimitMiddleware = require("../middlewares/rateLimit");
 const ShortUrl = require("../models/shortUrl"); // Import the schema
 const { generateShortAlias } = require("../utils/generateShortAlias"); // Utility for generating aliases
-const redisClient = require("../config/redisClient"); // Redis for caching
+const { setRedisKey } = require("../utils/redisProxy");
 
 // POST /api/shorten - Create a new short URL
 router.post("/api/shorten", authenticateUser, rateLimitMiddleware, async (req, res) => {
@@ -31,8 +31,8 @@ router.post("/api/shorten", authenticateUser, rateLimitMiddleware, async (req, r
 
         await shortUrl.save();
 
-        // Cache the short URL in Redis
-        await redisClient.setEx(shortAlias, 3600, normalizedUrl); // Cache for 1 hour
+        await setRedisKey(shortAlias, normalizedUrl);
+        // Cache for 1 hour
 
         res.status(201).json({
             shortUrl: `${req.protocol}://${req.get("host")}/${shortAlias}`,

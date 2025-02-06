@@ -45,24 +45,31 @@ class APIGatewaySessionStore extends session.Store {
             const response = await axios.post(this.apiGatewayUrl, { key: `sess:${sid}` });
             callback(null, response.data ? JSON.parse(response.data.value) : null);
         } catch (error) {
+            console.error("Error getting session:", error.response ? error.response.data : error.message);
             callback(error);
         }
     }
 
     async set(sid, session, callback) {
         try {
-            await axios.post(this.apiGatewayUrl, { key: `sess:${sid}`, value: JSON.stringify(session) });
+            console.log(`Setting session for sid: ${sid} at URL: ${this.apiGatewayUrl}`);
+            const response = await axios.post(this.apiGatewayUrl, { key: `sess:${sid}`, value: JSON.stringify(session) });
+            console.log("Set session response:", response.data);
             callback(null);
         } catch (error) {
+            console.error("Error setting session:", error.response ? error.response.data : error.message);
             callback(error);
         }
     }
 
     async destroy(sid, callback) {
         try {
-            await axios.post(this.apiGatewayUrl, { key: `sess:${sid}`, value: null });
+            console.log(`Destroying session for sid: ${sid} at URL: ${this.apiGatewayUrl}`);
+            const response = await axios.post(this.apiGatewayUrl, { key: `sess:${sid}`, value: null });
+            console.log("Destroy session response:", response.data);
             callback(null);
         } catch (error) {
+            console.error("Error destroying session:", error.response ? error.response.data : error.message);
             callback(error);
         }
     }
@@ -82,10 +89,7 @@ app.use(passport.session());
 
 // ✅ Connect to MongoDB
 mongoose
-    .connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
+    .connect(process.env.MONGO_URI)
     .then(() => console.log("✅ MongoDB connected"))
     .catch((err) => console.error("❌ MongoDB connection error:", err));
 

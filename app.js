@@ -42,7 +42,7 @@ class APIGatewaySessionStore extends session.Store {
 
     async get(sid, callback) {
         try {
-            const url = `${this.apiGatewayUrl}/get`;
+            const url = `${this.apiGatewayUrl}/GET`;
             console.log(`GET request to URL: ${url} with key: sess:${sid}`);
             const response = await axios.post(url, { key: `sess:${sid}` });
             callback(null, response.data ? JSON.parse(response.data.value) : null);
@@ -54,7 +54,7 @@ class APIGatewaySessionStore extends session.Store {
 
     async set(sid, session, callback) {
         try {
-            const url = `${this.apiGatewayUrl}/set`;
+            const url = `${this.apiGatewayUrl}/SET`;
             console.log(`SET request to URL: ${url} with key: sess:${sid}`);
             const response = await axios.post(url, { key: `sess:${sid}`, value: JSON.stringify(session) });
             console.log("Set session response:", response.data);
@@ -67,7 +67,7 @@ class APIGatewaySessionStore extends session.Store {
 
     async destroy(sid, callback) {
         try {
-            const url = `${this.apiGatewayUrl}/destroy`;
+            const url = `${this.apiGatewayUrl}/DESTROY`;
             console.log(`DESTROY request to URL: ${url} with key: sess:${sid}`);
             const response = await axios.post(url, { key: `sess:${sid}`, value: null });
             console.log("Destroy session response:", response.data);
@@ -79,9 +79,9 @@ class APIGatewaySessionStore extends session.Store {
     }
 }
 
-const apiGatewayUrl = process.env.REDIS_PROXY_URL;
+const apiGatewaySessionUrl = process.env.REDIS_SESSION_API_URL;
 app.use(session({
-    store: new APIGatewaySessionStore(apiGatewayUrl),
+    store: new APIGatewaySessionStore(apiGatewaySessionUrl),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
@@ -97,10 +97,7 @@ app.use(passport.session());
 
 // ✅ Connect to MongoDB
 mongoose
-    .connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
+    .connect(process.env.MONGO_URI)
     .then(() => console.log("✅ MongoDB connected"))
     .catch((err) => console.error("❌ MongoDB connection error:", err));
 

@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const REDIS_PROXY_URL = process.env.REDIS_PROXY_URL; // Ensure this is set correctly in your environment variables;
+const REDIS_PROXY_URL = process.env.REDIS_PROXY_URL;
 
 async function setRedisKey(key, value) {
     try {

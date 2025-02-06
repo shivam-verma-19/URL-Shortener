@@ -42,7 +42,9 @@ class APIGatewaySessionStore extends session.Store {
 
     async get(sid, callback) {
         try {
-            const response = await axios.post(this.apiGatewayUrl, { key: `sess:${sid}` });
+            const url = `${this.apiGatewayUrl}/get`;
+            console.log(`GET request to URL: ${url} with key: sess:${sid}`);
+            const response = await axios.post(url, { key: `sess:${sid}` });
             callback(null, response.data ? JSON.parse(response.data.value) : null);
         } catch (error) {
             console.error("Error getting session:", error.response ? error.response.data : error.message);
@@ -52,8 +54,9 @@ class APIGatewaySessionStore extends session.Store {
 
     async set(sid, session, callback) {
         try {
-            console.log(`Setting session for sid: ${sid} at URL: ${this.apiGatewayUrl}`);
-            const response = await axios.post(this.apiGatewayUrl, { key: `sess:${sid}`, value: JSON.stringify(session) });
+            const url = `${this.apiGatewayUrl}/set`;
+            console.log(`SET request to URL: ${url} with key: sess:${sid}`);
+            const response = await axios.post(url, { key: `sess:${sid}`, value: JSON.stringify(session) });
             console.log("Set session response:", response.data);
             callback(null);
         } catch (error) {
@@ -64,8 +67,9 @@ class APIGatewaySessionStore extends session.Store {
 
     async destroy(sid, callback) {
         try {
-            console.log(`Destroying session for sid: ${sid} at URL: ${this.apiGatewayUrl}`);
-            const response = await axios.post(this.apiGatewayUrl, { key: `sess:${sid}`, value: null });
+            const url = `${this.apiGatewayUrl}/destroy`;
+            console.log(`DESTROY request to URL: ${url} with key: sess:${sid}`);
+            const response = await axios.post(url, { key: `sess:${sid}`, value: null });
             console.log("Destroy session response:", response.data);
             callback(null);
         } catch (error) {
@@ -78,7 +82,7 @@ class APIGatewaySessionStore extends session.Store {
 const apiGatewayUrl = process.env.REDIS_PROXY_URL;
 app.use(session({
     store: new APIGatewaySessionStore(apiGatewayUrl),
-    secret: "secret",
+    secret: process.env.SESSION_SECRET, // Use environment variable for session secret
     resave: false,
     saveUninitialized: true,
     cookie: { secure: process.env.NODE_ENV === "production" } // Set to true if using HTTPS
@@ -89,7 +93,10 @@ app.use(passport.session());
 
 // ✅ Connect to MongoDB
 mongoose
-    .connect(process.env.MONGO_URI)
+    .connect(process.env.MONGO_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
     .then(() => console.log("✅ MongoDB connected"))
     .catch((err) => console.error("❌ MongoDB connection error:", err));
 

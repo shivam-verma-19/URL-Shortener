@@ -85,7 +85,6 @@ mongoose
     .connect(process.env.MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        useCreateIndex: true,
     })
     .then(() => console.log("✅ MongoDB connected"))
     .catch((err) => console.error("❌ MongoDB connection error:", err));
@@ -162,6 +161,9 @@ app.use(analyticsRoutes); // Register analytics routes
 
 // ✅ Error Handling Middleware
 app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        return next(err);
+    }
     console.error("❌ Server Error:", err.stack);
     res.status(500).json({ error: "Internal Server Error", message: err.message });
 });

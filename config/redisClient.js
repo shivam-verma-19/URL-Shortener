@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const REDIS_PROXY_URL = "https://nehehy80pg.execute-api.ap-south-1.amazonaws.com/prod";
+const REDIS_PROXY_URL = process.env.REDIS_PROXY_URL;
 
 async function setRedisKey(key, value) {
     try {

@@ -1,11 +1,19 @@
 const express = require("express");
+const { param, validationResult } = require("express-validator");
 const router = express.Router();
 const authenticateUser = require("../middlewares/authenticateUser");
 const ShortUrl = require("../models/shortUrl");
 const Analytics = require("../models/analytics");
 
 // GET /api/analytics/:alias - Get URL analytics
-router.get("/api/analytics/:alias", authenticateUser, async (req, res) => {
+router.get("/api/analytics/:alias", authenticateUser, [
+    param('alias').isAlphanumeric().withMessage('Alias must be alphanumeric')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     const { alias } = req.params;
 
     try {
@@ -22,7 +30,14 @@ router.get("/api/analytics/:alias", authenticateUser, async (req, res) => {
 });
 
 // GET /api/analytics/topic/:topic - Get topic-based analytics
-router.get("/api/analytics/topic/:topic", authenticateUser, async (req, res) => {
+router.get("/api/analytics/topic/:topic", authenticateUser, [
+    param('topic').isAlphanumeric().withMessage('Topic must be alphanumeric')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     const { topic } = req.params;
 
     try {

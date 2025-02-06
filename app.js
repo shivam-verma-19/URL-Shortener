@@ -5,6 +5,12 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const session = require("express-session");
 const axios = require("axios");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+const hpp = require("hpp");
+const cors = require("cors");
 const shortenRoutes = require("./routes/shorten");
 const analyticsRoutes = require("./routes/analytics");
 const User = require("./models/user"); // Assuming you have a User model
@@ -14,6 +20,18 @@ dotenv.config(); // Load environment variables
 
 const app = express();
 app.use(express.json());
+app.use(helmet()); // Set security headers
+app.use(mongoSanitize()); // Sanitize data
+app.use(xss()); // Prevent XSS attacks
+app.use(hpp()); // Prevent HTTP parameter pollution
+app.use(cors()); // Enable CORS
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
 
 // Custom session store using API Gateway
 class APIGatewaySessionStore extends session.Store {
@@ -56,7 +74,7 @@ app.use(session({
     secret: "secret",
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Set to true if using HTTPS
+    cookie: { secure: process.env.NODE_ENV === "production" } // Set to true if using HTTPS
 }));
 
 app.use(passport.initialize());
@@ -64,7 +82,11 @@ app.use(passport.session());
 
 // ✅ Connect to MongoDB
 mongoose
-    .connect(process.env.MONGO_URI)
+    .connect(process.env.MONGO_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useCreateIndex: true,
+    })
     .then(() => console.log("✅ MongoDB connected"))
     .catch((err) => console.error("❌ MongoDB connection error:", err));
 

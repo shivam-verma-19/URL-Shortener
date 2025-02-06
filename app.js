@@ -82,10 +82,14 @@ class APIGatewaySessionStore extends session.Store {
 const apiGatewayUrl = process.env.REDIS_PROXY_URL;
 app.use(session({
     store: new APIGatewaySessionStore(apiGatewayUrl),
-    secret: process.env.SESSION_SECRET, // Use environment variable for session secret
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === "production" } // Set to true if using HTTPS
+    cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+        maxAge: 24 * 60 * 60 * 1000 // 1 day in milliseconds
+    }
 }));
 
 app.use(passport.initialize());

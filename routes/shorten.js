@@ -4,7 +4,36 @@ const authenticateUser = require("../middlewares/authenticateUser");
 const rateLimitMiddleware = require("../middlewares/rateLimit");
 const ShortUrl = require("../models/shortUrl"); // Import the schema
 const { generateShortAlias } = require("../utils/generateShortAlias"); // Utility for generating aliases
-const redisClient = require("../config/redisClient"); // Use ioredis client
+const axios = require("axios");
+
+const apiGatewayUrl = "https://axptlo1c2i.execute-api.ap-south-1.amazonaws.com/prod";
+
+// Function to interact with API Gateway for Redis operations
+async function setRedisKey(key, value, ttl = 3600) { // Default TTL = 1 hour
+    try {
+        await axios.post(`${apiGatewayUrl}/set`, {
+            keyType: "url",
+            key,
+            value,
+            ttl,
+        });
+    } catch (error) {
+        console.error("❌ Error setting Redis key:", error.message);
+    }
+}
+
+async function getRedisKey(key) {
+    try {
+        const response = await axios.post(`${apiGatewayUrl}/get`, {
+            keyType: "url",
+            key,
+        });
+        return response.data ? response.data.value : null;
+    } catch (error) {
+        console.error("❌ Error getting Redis key:", error.message);
+        return null;
+    }
+}
 
 // POST /api/shorten - Create a new short URL
 router.post("/api/shorten", authenticateUser, rateLimitMiddleware, async (req, res) => {
@@ -15,7 +44,7 @@ router.post("/api/shorten", authenticateUser, rateLimitMiddleware, async (req, r
     }
 
     try {
-        // Validate and normalize the URL (optional, use a library like validator)
+        // Validate and normalize the URL
         const normalizedUrl = new URL(longUrl).toString();
 
         // Generate a unique alias
@@ -31,8 +60,8 @@ router.post("/api/shorten", authenticateUser, rateLimitMiddleware, async (req, r
 
         await shortUrl.save();
 
-        // Cache the short URL in Redis for 1 hour
-        await redisClient.set(shortAlias, normalizedUrl, 'EX', 3600);
+        // ✅ Cache the short URL in Redis via API Gateway
+        await setRedisKey(shortAlias, normalizedUrl);
 
         res.status(201).json({
             shortUrl: `${req.protocol}://${req.get("host")}/${shortAlias}`,
@@ -52,9 +81,10 @@ router.get("/:alias", async (req, res) => {
     const { alias } = req.params;
 
     try {
-        // Check Redis cache first
-        const cachedUrl = await redisClient.get(alias);
+        // ✅ Check Redis cache first via API Gateway
+        const cachedUrl = await getRedisKey(alias);
         if (cachedUrl) {
+            console.log("✅ Cache hit - Redirecting from Redis");
             return res.redirect(cachedUrl);
         }
 
@@ -64,8 +94,8 @@ router.get("/:alias", async (req, res) => {
             return res.status(404).json({ message: "Short URL not found." });
         }
 
-        // Cache the URL in Redis for future requests
-        await redisClient.set(alias, shortUrl.longUrl, 'EX', 3600);
+        // ✅ Cache the URL in Redis via API Gateway
+        await setRedisKey(alias, shortUrl.longUrl);
 
         res.redirect(shortUrl.longUrl);
     } catch (err) {

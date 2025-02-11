@@ -13,27 +13,29 @@ const hpp = require("hpp");
 const cors = require("cors");
 const shortenRoutes = require("./routes/shorten");
 const analyticsRoutes = require("./routes/analytics");
-const User = require("./models/user"); // Assuming you have a User model
-const { setRedisKey, getRedisKey } = require("./config/redisClient"); // Use API Gateway for Redis
+const User = require("./models/user");
+const { setSessionKey } = require("./utils/redisProxy"); // Updated function imports
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(helmet()); // Set security headers
-app.use(mongoSanitize()); // Sanitize data
-app.use(xss()); // Prevent XSS attacks
-app.use(hpp()); // Prevent HTTP parameter pollution
-app.use(cors()); // Enable CORS
+app.use(helmet());
+app.use(mongoSanitize());
+app.use(xss());
+app.use(hpp());
+app.use(cors());
 
-// Rate limiting
 const limiter = rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: 10 * 60 * 1000,
+    max: 100,
 });
 app.use(limiter);
 
-// Custom session store using API Gateway
+// ✅ Updated API Gateway URL
+const apiGatewaySessionUrl = "https://axptlo1c2i.execute-api.ap-south-1.amazonaws.com/prod";
+
+// ✅ Updated Session Store to use the correct API endpoints
 class APIGatewaySessionStore extends session.Store {
     constructor(apiGatewayUrl) {
         super();
@@ -42,44 +44,36 @@ class APIGatewaySessionStore extends session.Store {
 
     async get(sid, callback) {
         try {
-            const url = `${this.apiGatewayUrl}/GET`;
-            console.log(`GET request to URL: ${url} with key: sess:${sid}`);
-            const response = await axios.post(url, { key: `sess:${sid}` });
+            const response = await axios.post(`${this.apiGatewayUrl}/get`, { keyType: "session", key: sid });
             callback(null, response.data ? JSON.parse(response.data.value) : null);
         } catch (error) {
-            console.error("Error getting session:", error.response ? error.response.data : error.message);
+            console.error("Error getting session:", error.message);
             callback(error);
         }
     }
 
     async set(sid, session, callback) {
         try {
-            const url = `${this.apiGatewayUrl}/SET`;
-            console.log(`SET request to URL: ${url} with key: sess:${sid}`);
-            const response = await axios.post(url, { key: `sess:${sid}`, value: JSON.stringify(session) });
-            console.log("Set session response:", response.data);
+            await axios.post(`${this.apiGatewayUrl}/set`, { keyType: "session", key: sid, value: JSON.stringify(session) });
             callback(null);
         } catch (error) {
-            console.error("Error setting session:", error.response ? error.response.data : error.message);
+            console.error("Error setting session:", error.message);
             callback(error);
         }
     }
 
     async destroy(sid, callback) {
         try {
-            const url = `${this.apiGatewayUrl}/DESTROY`;
-            console.log(`DESTROY request to URL: ${url} with key: sess:${sid}`);
-            const response = await axios.post(url, { key: `sess:${sid}`, value: null });
-            console.log("Destroy session response:", response.data);
+            await axios.post(`${this.apiGatewayUrl}/destroy`, { keyType: "session", key: sid });
             callback(null);
         } catch (error) {
-            console.error("Error destroying session:", error.response ? error.response.data : error.message);
+            console.error("Error destroying session:", error.message);
             callback(error);
         }
     }
 }
 
-const apiGatewaySessionUrl = process.env.REDIS_SESSION_API_URL;
+// ✅ Now using the correct API Gateway URL
 app.use(session({
     store: new APIGatewaySessionStore(apiGatewaySessionUrl),
     secret: process.env.SESSION_SECRET,
@@ -87,56 +81,51 @@ app.use(session({
     saveUninitialized: true,
     cookie: {
         secure: process.env.NODE_ENV === "production",
-        httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-        maxAge: 24 * 60 * 60 * 1000 // 1 day in milliseconds
-    }
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+    },
 }));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ Connect to MongoDB
-mongoose
-    .connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("✅ MongoDB connected"))
     .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ✅ Test Redis Connection via API Gateway
+// ✅ Using new Redis session functions instead of old `setRedisKey`
 (async () => {
     try {
-        await setRedisKey("connection-test", "OK");
-        console.log("✅ Redis connection via API Gateway successful");
+        await setSessionKey("connection-test", "OK");
+        console.log("✅ Redis session connection via API Gateway successful");
     } catch (error) {
-        console.error("❌ Redis connection error:", error.message);
+        console.error("❌ Redis session connection error:", error.message);
     }
 })();
 
-// ✅ Configure Google OAuth Authentication
-passport.use(
-    new GoogleStrategy(
-        {
-            clientID: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: process.env.GOOGLE_CALLBACK_URL,
-        },
-        async (accessToken, refreshToken, profile, done) => {
-            try {
-                let user = await User.findOne({ googleId: profile.id });
-                if (!user) {
-                    user = new User({
-                        googleId: profile.id,
-                        displayName: profile.displayName,
-                        email: profile.emails[0].value,
-                    });
-                    await user.save();
-                }
-                return done(null, user);
-            } catch (err) {
-                return done(err, null);
+passport.use(new GoogleStrategy(
+    {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+        try {
+            let user = await User.findOne({ googleId: profile.id });
+            if (!user) {
+                user = new User({
+                    googleId: profile.id,
+                    displayName: profile.displayName,
+                    email: profile.emails[0].value,
+                });
+                await user.save();
             }
+            return done(null, user);
+        } catch (err) {
+            return done(err, null);
         }
-    )
-);
+    }
+));
 
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {
@@ -148,34 +137,26 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-// ✅ Google Auth Routes
 app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-app.get(
-    "/auth/google/callback",
+app.get("/auth/google/callback",
     passport.authenticate("google", { failureRedirect: "/" }),
-    (req, res) => res.redirect("/dashboard") // Redirect after login
+    (req, res) => res.redirect("/dashboard")
 );
 
-// ✅ Root Route
 app.get("/", (req, res) => {
     res.send("Welcome to the URL Shortener Service");
 });
 
-// ✅ Debugging Missing Environment Variables
 console.log("🔍 MongoDB URI:", process.env.MONGO_URI ? "✅ Set" : "❌ Not Set");
-console.log("🔍 Redis API Gateway URL:", process.env.REDIS_PROXY_URL ? "✅ Set" : "❌ Not Set");
+console.log("🔍 Redis API Gateway URL:", apiGatewaySessionUrl);
 console.log("🔍 Google Client ID:", process.env.GOOGLE_CLIENT_ID ? "✅ Set" : "❌ Not Set");
 console.log("🔍 Google Callback URL:", process.env.GOOGLE_CALLBACK_URL ? "✅ Set" : "❌ Not Set");
 
-// ✅ Use Routes
-app.use(shortenRoutes); // Register the routes
-app.use(analyticsRoutes); // Register analytics routes
+app.use(shortenRoutes);
+app.use(analyticsRoutes);
 
-// ✅ Error Handling Middleware
 app.use((err, req, res, next) => {
-    if (res.headersSent) {
-        return next(err);
-    }
+    if (res.headersSent) return next(err);
     console.error("❌ Server Error:", err.stack);
     res.status(500).json({ error: "Internal Server Error", message: err.message });
 });

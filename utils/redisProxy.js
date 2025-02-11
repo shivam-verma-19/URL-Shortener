@@ -5,9 +5,9 @@ const REDIS_PROXY_URL = "https://axptlo1c2i.execute-api.ap-south-1.amazonaws.com
 /**
  * Set a key in Redis.
  */
-async function setRedisKey(keyType, key, value, ttl = 3600) {
+async function setRedisKey(keyType, key, value) {
     try {
-        const response = await axios.post(`${REDIS_PROXY_URL}/RedisHandler/set`, { keyType, key, value, ttl });
+        const response = await axios.post(`${REDIS_PROXY_URL}/RedisHandler/set`, { keyType, key, value });
         return response.data;
     } catch (error) {
         console.error(`Error setting Redis ${keyType} key:`, error.response?.data || error.message);

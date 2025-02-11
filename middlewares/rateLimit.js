@@ -1,4 +1,4 @@
-const { setRateLimitKey, getRateLimitKey } = require("./utils/redisProxy");
+const { setRateLimitKey, getRateLimitKey } = require("../utils/redisProxy");
 
 const RATE_LIMIT = 10; // Maximum requests allowed
 const EXPIRY_TIME = 60; // Rate limit expiry in seconds (1 minute)

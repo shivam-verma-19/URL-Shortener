@@ -1,16 +1,13 @@
 const axios = require("axios");
 
-const REDIS_HANDLER_URL = "https://axptlo1c2i.execute-api.ap-south-1.amazonaws.com/prod";
+const REDIS_PROXY_URL = "https://axptlo1c2i.execute-api.ap-south-1.amazonaws.com/prod";
 
 /**
  * Set a key in Redis.
- * @param {string} keyType - The type of key ("session" or "short").
- * @param {string} key - The Redis key.
- * @param {string} value - The value to store.
  */
-async function setRedisKey(keyType, key, value) {
+async function setRedisKey(keyType, key, value, ttl = 3600) {
     try {
-        const response = await axios.post(`${REDIS_HANDLER_URL}/set`, { keyType, key, value });
+        const response = await axios.post(`${REDIS_PROXY_URL}/RedisHandler/set`, { keyType, key, value, ttl });
         return response.data;
     } catch (error) {
         console.error(`Error setting Redis ${keyType} key:`, error.response?.data || error.message);
@@ -20,12 +17,10 @@ async function setRedisKey(keyType, key, value) {
 
 /**
  * Get a key from Redis.
- * @param {string} keyType - The type of key ("session" or "short").
- * @param {string} key - The Redis key.
  */
 async function getRedisKey(keyType, key) {
     try {
-        const response = await axios.post(`${REDIS_HANDLER_URL}/get`, { keyType, key });
+        const response = await axios.post(`${REDIS_PROXY_URL}/RedisHandler/get`, { keyType, key });
         return response.data.value;
     } catch (error) {
         console.error(`Error getting Redis ${keyType} key:`, error.response?.data || error.message);
@@ -35,12 +30,10 @@ async function getRedisKey(keyType, key) {
 
 /**
  * Destroy a key in Redis.
- * @param {string} keyType - The type of key ("session" or "short").
- * @param {string} key - The Redis key.
  */
 async function destroyRedisKey(keyType, key) {
     try {
-        const response = await axios.post(`${REDIS_HANDLER_URL}/destroy`, { keyType, key });
+        const response = await axios.post(`${REDIS_PROXY_URL}/RedisHandler/destroy`, { keyType, key });
         return response.data;
     } catch (error) {
         console.error(`Error deleting Redis ${keyType} key:`, error.response?.data || error.message);
@@ -57,4 +50,8 @@ module.exports = {
     setShortKey: (key, value) => setRedisKey("short", key, value),
     getShortKey: (key) => getRedisKey("short", key),
     destroyShortKey: (key) => destroyRedisKey("short", key),
+
+    setRateLimitKey: (key, value, ttl) => setRedisKey("rateLimit", key, value, ttl),
+    getRateLimitKey: (key) => getRedisKey("rateLimit", key),
+    destroyRateLimitKey: (key) => destroyRedisKey("rateLimit", key),
 };

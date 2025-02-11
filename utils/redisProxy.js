@@ -20,7 +20,7 @@ async function setRedisKey(keyType, key, value) {
  */
 async function getRedisKey(keyType, key) {
     try {
-        const response = await axios.post(`${REDIS_PROXY_URL}/RedisHandler/get`, { keyType, key });
+        const response = await axios.get(`${REDIS_PROXY_URL}/RedisHandler/get`, { keyType, key });
         return response.data.value;
     } catch (error) {
         console.error(`Error getting Redis ${keyType} key:`, error.response?.data || error.message);

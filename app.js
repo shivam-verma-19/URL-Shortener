@@ -20,7 +20,6 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // ✅ Ensures form submissions work correctly
 app.use(helmet());
 app.use(mongoSanitize());
 app.use(xss());
@@ -34,7 +33,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ✅ Updated API Gateway URL
-const apiGatewaySessionUrl = "https://url-shortener-zqo4.onrender.com"; // ✅ Updated Render URL
+const apiGatewaySessionUrl = "https://axptlo1c2i.execute-api.ap-south-1.amazonaws.com/prod";
 
 class APIGatewaySessionStore extends session.Store {
     constructor(apiGatewayUrl) {
@@ -44,7 +43,7 @@ class APIGatewaySessionStore extends session.Store {
 
     async get(sid, callback) {
         try {
-            const response = await axios.get(`${this.apiGatewayUrl}/RedisHandler/get`, { params: { keyType: "session", key: sid } });
+            const response = await axios.get(`${this.apiGatewayUrl}/RedisHandler/get`, { keyType: "session", key: sid });
             callback(null, response.data ? JSON.parse(response.data.value) : null);
         } catch (error) {
             console.error("Error getting session:", error.message);

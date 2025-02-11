@@ -44,7 +44,7 @@ class APIGatewaySessionStore extends session.Store {
 
     async get(sid, callback) {
         try {
-            const response = await axios.post(`${this.apiGatewayUrl}/get`, { keyType: "session", key: sid });
+            const response = await axios.post(`${this.apiGatewayUrl}/RedisHandler/get`, { keyType: "session", key: sid });
             callback(null, response.data ? JSON.parse(response.data.value) : null);
         } catch (error) {
             console.error("Error getting session:", error.message);
@@ -54,7 +54,7 @@ class APIGatewaySessionStore extends session.Store {
 
     async set(sid, session, callback) {
         try {
-            await axios.post(`${this.apiGatewayUrl}/set`, { keyType: "session", key: sid, value: JSON.stringify(session) });
+            await axios.post(`${this.apiGatewayUrl}/RedisHandler/set`, { keyType: "session", key: sid, value: JSON.stringify(session) });
             callback(null);
         } catch (error) {
             console.error("Error setting session:", error.message);
@@ -64,7 +64,7 @@ class APIGatewaySessionStore extends session.Store {
 
     async destroy(sid, callback) {
         try {
-            await axios.post(`${this.apiGatewayUrl}/destroy`, { keyType: "session", key: sid });
+            await axios.post(`${this.apiGatewayUrl}/RedisHandler/destroy`, { keyType: "session", key: sid });
             callback(null);
         } catch (error) {
             console.error("Error destroying session:", error.message);

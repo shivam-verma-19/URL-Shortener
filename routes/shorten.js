@@ -6,12 +6,13 @@ const ShortUrl = require("../models/shortUrl"); // Import the schema
 const { generateShortAlias } = require("../utils/generateShortAlias"); // Utility for generating aliases
 const axios = require("axios");
 
+
 const apiGatewayUrl = "https://axptlo1c2i.execute-api.ap-south-1.amazonaws.com/prod";
 
 // Function to interact with API Gateway for Redis operations
 async function setRedisKey(key, value, ttl = 3600) { // Default TTL = 1 hour
     try {
-        await axios.post(`${apiGatewayUrl}/set`, {
+        await axios.post(`${apiGatewayUrl}/RedisHandler/set`, {
             keyType: "url",
             key,
             value,
@@ -24,7 +25,7 @@ async function setRedisKey(key, value, ttl = 3600) { // Default TTL = 1 hour
 
 async function getRedisKey(key) {
     try {
-        const response = await axios.post(`${apiGatewayUrl}/get`, {
+        const response = await axios.get(`${apiGatewayUrl}/RedisHandler/get`, {
             keyType: "url",
             key,
         });

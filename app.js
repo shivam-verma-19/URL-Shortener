@@ -15,6 +15,8 @@ const shortenRoutes = require("./routes/shorten");
 const analyticsRoutes = require("./routes/analytics");
 const User = require("./models/user");
 const { setSessionKey } = require("./utils/redisProxy");
+const swaggerUi = require("swagger-ui-express");
+const yaml = require("yamljs");
 
 // Load environment variables
 dotenv.config();
@@ -23,9 +25,7 @@ dotenv.config();
 const app = express();
 
 // Swagger setup
-const swaggerUi = require("swagger-ui-express");
-const yaml = require("yamljs");
-const swaggerDocument = yaml.load("./swagger.yaml"); // Make sure this file exists and is properly configured
+const swaggerDocument = yaml.load("./swagger.yaml");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Middleware setup

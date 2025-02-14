@@ -14,11 +14,21 @@ const cors = require("cors");
 const shortenRoutes = require("./routes/shorten");
 const analyticsRoutes = require("./routes/analytics");
 const User = require("./models/user");
-const { setSessionKey } = require("./utils/redisProxy"); // Updated function imports
+const { setSessionKey } = require("./utils/redisProxy");
 
+// Load environment variables
 dotenv.config();
 
+// Initialize Express
 const app = express();
+
+// Swagger setup
+const swaggerUi = require("swagger-ui-express");
+const yaml = require("yamljs");
+const swaggerDocument = yaml.load("./swagger.yaml"); // Make sure this file exists and is properly configured
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Middleware setup
 app.use(express.json());
 app.use(helmet());
 app.use(mongoSanitize());

@@ -1,4 +1,5 @@
 const express = require("express");
+const lusca = require("lusca");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const passport = require("passport");
@@ -95,6 +96,7 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000,
     },
 }));
+app.use(require("lusca").csrf());
 
 app.use(passport.initialize());
 app.use(passport.session());
